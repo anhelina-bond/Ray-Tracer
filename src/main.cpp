@@ -17,6 +17,7 @@
 
 #include <chrono>   
 #include <iomanip>  
+#include <stdlib.h>
 
 // Structure to pass data to each thread
 struct ThreadData {
@@ -57,10 +58,19 @@ void* render_rows(void* arg) {
 }
 
 
-int main() {
-    Scene scene;
-    loadScene("data/scene.xml", scene);
+int main(int argc, char** argv) {
+    char* scene_path = new char[50];
+    if (argc == 0) {
+         strcpy(scene_path, "data/scene.xml");
+    } else{
+        strcpy(scene_path, argv[1]);
 
+    }
+    
+    Scene scene;
+    loadScene(scene_path, scene);
+
+    delete[] scene_path;
     int nx = scene.cam.nx;
     int ny = scene.cam.ny;
 

@@ -271,7 +271,10 @@ void loadScene(const char* filename, Scene& scene) {
     std::cout << "Lights loaded: " << scene.lights.size() << std::endl;
     std::cout << "Meshes loaded: " << scene.meshes.size() << std::endl;
     if (!scene.meshes.empty()) {
-        std::cout << "Faces in Mesh 0: " << scene.meshes[0].faces.size() << std::endl;
+        for (int i = 0; i < scene.meshes.size(); i++) {
+            std::cout << "Faces in Mesh " << i <<  ": " << scene.meshes[i].faces.size() << std::endl;
+        }
+        
     }
     std::cout << "------------------------\n" << std::endl;
 }
