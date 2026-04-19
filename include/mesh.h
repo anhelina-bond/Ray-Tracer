@@ -6,12 +6,12 @@
 #include "ray.h"
 #include "material.h"
 
-class Scene; 
+class Scene;
 
 struct hit_record {
     point3 p;
-    vec3 normal;      // Smooth/Interpolated normal (for shading)
-    vec3 face_normal; // Geometric/Flat normal (for shadow offset)
+    vec3 normal;
+    vec3 face_normal;
     double t;
     double u_tex, v_tex;
     const Material* material;
@@ -30,12 +30,15 @@ public:
 
     void add_face(int v0, int v1, int v2, int t0, int t1, int t2, int n0, int n1, int n2);
 
-    // 2. These functions use "const Scene&", which works with a forward declaration
     bool hit(const Ray& r, double t_min, double t_max, hit_record& rec, const Scene& scene) const;
     bool shadow_hit(const Ray& r, double t_min, double t_max, const Scene& scene) const;
 };
 
-// 3. Forward declare trace so main.cpp knows about it
+// Free functions used by trace() and the triangular light path
+bool rayTriangleIntersect(const Ray& r, const vec3& v0, const vec3& v1,
+                          const vec3& v2, double& t_out);
+bool is_in_shadow(const Ray& shadow_ray, double t_max, const Scene& scene);
+
 color trace(const Ray& r, const Scene& scene, int depth);
 
 #endif
