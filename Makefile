@@ -4,7 +4,6 @@ ifeq ($(OS),Windows_NT)
     MKDIR = if not exist $(subst /,\,$(1)) mkdir $(subst /,\,$(1))
     RM = rmdir /s /q
     TARGET_EXT = .exe
-    # Use quotes for paths with spaces if necessary
     FIX_PATH = $(subst /,\,$(1))
 else
     # Linux/Mac Settings

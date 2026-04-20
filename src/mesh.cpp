@@ -10,7 +10,7 @@ void Mesh::add_face(int v0, int v1, int v2, int t0, int t1, int t2, int n0, int 
     faces.push_back(f);
 }
 
-// Möller–Trumbore helper 
+// Möller–Trumbore helper (ray-triangle intersection)
 static bool moller_trumbore(const Ray& r,
                              const vec3& v0, const vec3& v1, const vec3& v2,
                              double t_min, double t_max,
@@ -20,7 +20,7 @@ static bool moller_trumbore(const Ray& r,
     vec3 edge2 = v2 - v0;
     vec3 h = cross(r.direction(), edge2);
     double a = dot(edge1, h);
-    if (a > -1e-8 && a < 1e-8) return false;
+    if (a > -PARALLEL_EPSILON && a < PARALLEL_EPSILON) return false;
 
     double f = 1.0 / a;
     vec3 s = r.origin() - v0;
@@ -137,12 +137,12 @@ bool Mesh::shadow_hit(const Ray& r, double t_min, double t_max, const Scene& sce
 bool rayTriangleIntersect(const Ray& r, const vec3& v0, const vec3& v1,
                           const vec3& v2, double& t_out) {
     double u, v;
-    return moller_trumbore(r, v0, v1, v2, 0.001, std::numeric_limits<double>::max(), t_out, u, v);
+    return moller_trumbore(r, v0, v1, v2, RAY_EPSILON, std::numeric_limits<double>::max(), t_out, u, v);
 }
 
 bool is_in_shadow(const Ray& shadow_ray, double t_max, const Scene& scene) {
     for (const auto& mesh : scene.meshes)
-        if (mesh.shadow_hit(shadow_ray, 0.001, t_max, scene))
+        if (mesh.shadow_hit(shadow_ray, RAY_EPSILON, t_max, scene))
             return true;
     return false;
 }
@@ -154,7 +154,7 @@ color trace(const Ray& r, const Scene& scene, int depth) {
     double closest_so_far = std::numeric_limits<double>::max();
     bool hit = false;
     for (const auto& mesh : scene.meshes) {
-        if (mesh.hit(r, 0.001, closest_so_far, rec, scene)) {
+        if (mesh.hit(r, RAY_EPSILON, closest_so_far, rec, scene)) {
             hit = true;
             closest_so_far = rec.t;
         }
@@ -206,8 +206,8 @@ color trace(const Ray& r, const Scene& scene, int depth) {
         // Shadow acne check
         if (dot(rec.face_normal, L) <= 0) continue;
 
-        Ray shadow_ray(rec.p + rec.face_normal * 0.001, L);
-        if (!is_in_shadow(shadow_ray, t_light_dist - 0.001, scene)) {
+        Ray shadow_ray(rec.p + rec.face_normal * RAY_EPSILON, L);
+        if (!is_in_shadow(shadow_ray, t_light_dist - RAY_EPSILON, scene)) {
             
             color intensity = light_ptr->intensity;
 
@@ -225,7 +225,7 @@ color trace(const Ray& r, const Scene& scene, int depth) {
     // 4. Reflections (Recursive)
     if (mat->mirrorReflectance.e[0] > 0 || mat->mirrorReflectance.e[1] > 0 || mat->mirrorReflectance.e[2] > 0) {
         vec3 reflect_dir = r.direction() - 2.0 * dot(r.direction(), N) * N;
-        Ray reflect_ray(rec.p + rec.face_normal * 0.001, unit_vector(reflect_dir));
+        Ray reflect_ray(rec.p + rec.face_normal * RAY_EPSILON, unit_vector(reflect_dir));
         final_color += mat->mirrorReflectance * trace(reflect_ray, scene, depth + 1);
     }
 

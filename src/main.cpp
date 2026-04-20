@@ -19,6 +19,8 @@
 #include <iomanip>  
 #include <stdlib.h>
 
+#define NUM_THREADS 8 
+
 // Structure to pass data to each thread
 struct ThreadData {
     int start_row;
@@ -43,11 +45,9 @@ void* render_rows(void* arg) {
 
     for (int j = data->start_row; j < data->end_row; ++j) {
         for (int i = 0; i < nx; ++i) {
-            // Invert J because image coords usually start from top
             Ray r = data->scene->cam.get_ray(i, j);
             color pixel_color = trace(r, *(data->scene), 0);
 
-            // STB expects [R, G, B, R, G, B...]
             int pixel_index = (j * nx + i) * 3;
             data->image_buffer[pixel_index + 0] = clamp(pixel_color.e[0]);
             data->image_buffer[pixel_index + 1] = clamp(pixel_color.e[1]);
@@ -59,18 +59,12 @@ void* render_rows(void* arg) {
 
 
 int main(int argc, char** argv) {
-    char* scene_path = new char[50];
-    if (argc == 0) {
-         strcpy(scene_path, "data/scene.xml");
-    } else{
-        strcpy(scene_path, argv[1]);
+    std::string scene_path = (argc < 2) ? "data/scene.xml" : argv[1];
 
-    }
-    
     Scene scene;
-    loadScene(scene_path, scene);
+    // .c_str() converts std::string to const char*
+    loadScene(scene_path.c_str(), scene); 
 
-    delete[] scene_path;
     int nx = scene.cam.nx;
     int ny = scene.cam.ny;
 
@@ -82,10 +76,9 @@ int main(int argc, char** argv) {
     unsigned char* image_buffer = new unsigned char[nx * ny * 3];
 
     // MULTITHREADING SETUP
-    const int num_threads = 8; 
-    pthread_t threads[num_threads];
-    ThreadData thread_data[num_threads];
-    int rows_per_thread = ny / num_threads;
+    pthread_t threads[NUM_THREADS];
+    ThreadData thread_data[NUM_THREADS];
+    int rows_per_thread = ny / NUM_THREADS;
 
     int width, height, channels;
     unsigned char* data = stbi_load(scene.texture_image_name.c_str(), &width, &height, &channels, 3);
@@ -97,25 +90,25 @@ int main(int argc, char** argv) {
         std::cout << "Texture loaded: " << scene.texture_image_name << std::endl;
     }
 
-    std::cout << "Rendering " << nx << "x" << ny << " image with " << num_threads << " threads..." << std::endl;
+    std::cout << "Rendering " << nx << "x" << ny << " image with " << NUM_THREADS << " threads..." << std::endl;
 
-    // --- START TIMER ---
+    // START TIMER
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    for (int i = 0; i < num_threads; ++i) {
+    for (int i = 0; i < NUM_THREADS; ++i) {
         thread_data[i].scene = &scene;
         thread_data[i].image_buffer = image_buffer;
         thread_data[i].start_row = i * rows_per_thread;
-        thread_data[i].end_row = (i == num_threads - 1) ? ny : (i + 1) * rows_per_thread;
+        thread_data[i].end_row = (i == NUM_THREADS - 1) ? ny : (i + 1) * rows_per_thread;
 
         pthread_create(&threads[i], nullptr, render_rows, &thread_data[i]);
     }
 
-    for (int i = 0; i < num_threads; ++i) {
+    for (int i = 0; i < NUM_THREADS; ++i) {
         pthread_join(threads[i], nullptr);
     }
 
-    // --- STOP TIMER ---
+    // STOP TIMER
     auto end_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end_time - start_time;
 
@@ -129,7 +122,7 @@ int main(int argc, char** argv) {
     else std::cout << "Failed to write PNG!" << std::endl;
 
     delete[] image_buffer;
-    if (data) stbi_image_free(data); // Good practice to free loaded texture
+    if (data) stbi_image_free(data); 
 
     return 0;
 }

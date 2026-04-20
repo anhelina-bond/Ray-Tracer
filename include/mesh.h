@@ -6,6 +6,9 @@
 #include "ray.h"
 #include "material.h"
 
+constexpr double RAY_EPSILON      = 1e-3;  // Origin offset for shadow/reflection rays
+constexpr double PARALLEL_EPSILON = 1e-8;  // Near-zero determinant threshold in Möller–Trumbore
+
 class Scene;
 
 struct hit_record {

@@ -11,38 +11,37 @@ void loadScene(const char* filename, Scene& scene) {
     if (eResult != XML_SUCCESS) {
         std::cerr << "Error: Could not load XML file: " << filename << std::endl;
         std::cerr << "Error ID: " << eResult << std::endl;
-        return; // This is why nx and ny remain 0
+        return; 
     }
     std::cout << "Successfully loaded: " << filename << std::endl;
 
     XMLElement* root = doc.FirstChildElement("scene");
     
-    // 1. Get maxraytracedepth
+    // Get maxraytracedepth
     XMLElement* depthElement = root->FirstChildElement("maxraytracedepth");
     if (depthElement) {
         scene.max_ray_trace_depth = depthElement->IntText();
     }
 
-    // 2. Get Background Color
+    // Get Background Color
     XMLElement* bgElement = root->FirstChildElement("backgroundColor");
     if (bgElement) {
         std::stringstream ss(bgElement->GetText());
         ss >> scene.background_color.e[0] >> scene.background_color.e[1] >> scene.background_color.e[2];
     }
 
+    // Get camera
     XMLElement* camElement = root->FirstChildElement("camera");
     if (camElement) {
-        // 1. Declare variables outside the IF blocks so they exist for the final call
         point3 position;
         vec3 gaze, up;
         double left, right, bottom, top;
         double near_distance;
         int nx, ny;
 
-        // Helper for x,y,z parsing
         double x, y, z;
 
-        // 2. Parse Position
+        // Parse Position
         XMLElement* positionElement = camElement->FirstChildElement("position");
         if (positionElement && positionElement->GetText()) {
             std::stringstream ss(positionElement->GetText());
@@ -50,7 +49,7 @@ void loadScene(const char* filename, Scene& scene) {
             position = point3(x, y, z); // Assignment, not function call
         }
 
-        // 3. Parse Gaze
+        // Parse Gaze
         XMLElement* gazeElement = camElement->FirstChildElement("gaze");
         if (gazeElement && gazeElement->GetText()) {
             std::stringstream ss(gazeElement->GetText());
@@ -58,7 +57,7 @@ void loadScene(const char* filename, Scene& scene) {
             gaze = vec3(x, y, z);
         }
 
-        // 4. Parse Up
+        // Parse Up
         XMLElement* upElement = camElement->FirstChildElement("up");
         if (upElement && upElement->GetText()) {
             std::stringstream ss(upElement->GetText());
@@ -66,45 +65,45 @@ void loadScene(const char* filename, Scene& scene) {
             up = vec3(x, y, z);
         }
 
-        // 5. Parse Nearplane (4 values)
+        // Parse Nearplane 
         XMLElement* nearplaneElement = camElement->FirstChildElement("nearPlane");
         if (nearplaneElement && nearplaneElement->GetText()) {
             std::stringstream ss(nearplaneElement->GetText());
             ss >> left >> right >> bottom >> top;
         }
 
-        // 6. Parse Near Distance (1 value)
+        // Parse Near Distance
         XMLElement* neardistanceElement = camElement->FirstChildElement("neardistance");
         if (neardistanceElement && neardistanceElement->GetText()) {
             std::stringstream ss(neardistanceElement->GetText());
             ss >> near_distance;
         }
 
-        // 7. Parse Image Resolution (2 values)
+        // Parse Image Resolution 
         XMLElement* imageresolutionElement = camElement->FirstChildElement("imageresolution");
         if (imageresolutionElement && imageresolutionElement->GetText()) {
             std::stringstream ss(imageresolutionElement->GetText());
             ss >> nx >> ny;
         }
 
-        // 8. Update the Scene's Camera
-        // Assuming 'cam' is a public member of Scene
+        // Update the Scene's Camera
         scene.cam = Camera(position, gaze, up, left, right, bottom, top, near_distance, nx, ny);
     }
+
+    // Get lights
     XMLElement* lightsElement = root->FirstChildElement("lights");
     if (lightsElement) {
 
-        // --- 1. Handle Ambient Light ---
+        // Handle Ambient Light
         XMLElement* ambElem = lightsElement->FirstChildElement("ambientlight");
         if (ambElem && ambElem->GetText()) {
             double r, g, b;
             std::stringstream ss(ambElem->GetText());
             ss >> r >> g >> b;
-            // Usually, ambient light is stored as a single global color in the scene
             scene.ambient_light = color(r, g, b); 
         }
 
-        // --- 2. Handle Point Lights ---
+        // Handle Point Lights 
         for (XMLElement* pElem = lightsElement->FirstChildElement("pointlight"); 
             pElem != nullptr; 
             pElem = pElem->NextSiblingElement("pointlight")) {
@@ -121,12 +120,11 @@ void loadScene(const char* filename, Scene& scene) {
                 std::stringstream ssInt(intElem->GetText());
                 ssInt >> ir >> ig >> ib;
 
-                // Create pointLight and push to polymorphic vector
                 scene.lights.push_back(std::make_shared<pointLight>(ir, ig, ib, px, py, pz));
             }
         }
 
-        // --- 3. Handle Triangular Lights ---
+        // Handle Triangular Lights
         for (XMLElement* tElem = lightsElement->FirstChildElement("triangularlight"); 
             tElem != nullptr; 
             tElem = tElem->NextSiblingElement("triangularlight")) {
@@ -134,7 +132,6 @@ void loadScene(const char* filename, Scene& scene) {
             point3 v1, v2, v3;
             double ir, ig, ib;
 
-            // Parse 3 vertices and intensity
             XMLElement* v1Elem = tElem->FirstChildElement("vertex1");
             XMLElement* v2Elem = tElem->FirstChildElement("vertex2");
             XMLElement* v3Elem = tElem->FirstChildElement("vertex3");
@@ -146,12 +143,12 @@ void loadScene(const char* filename, Scene& scene) {
                 std::stringstream ss3(v3Elem->GetText()); ss3 >> v3.e[0] >> v3.e[1] >> v3.e[2];
                 std::stringstream ssI(intElem->GetText()); ssI >> ir >> ig >> ib;
 
-                // Create triangularLight and push to polymorphic vector
                 scene.lights.push_back(std::make_shared<triangularLight>(ir, ig, ib, v1, v2, v3));
             }
         }
     }
 
+    // Get materials
     XMLElement* materialElement = root->FirstChildElement("materials");
     if (materialElement) {
         for (XMLElement* pElem = materialElement->FirstChildElement("material"); 
@@ -168,7 +165,6 @@ void loadScene(const char* filename, Scene& scene) {
             XMLElement* phonE = pElem->FirstChildElement("phongexponent");
             XMLElement* texFE = pElem->FirstChildElement("texturefactor");
 
-            // Check if every single tag exists
             if (ambE && diffE && specE && mirrE && phonE && texFE) {
                 std::stringstream ssA(ambE->GetText()); ssA >> amb.e[0] >> amb.e[1] >> amb.e[2];
                 std::stringstream ssD(diffE->GetText()); ssD >> diff.e[0] >> diff.e[1] >> diff.e[2];
@@ -185,6 +181,7 @@ void loadScene(const char* filename, Scene& scene) {
         }
     }
 
+    // Get vertex data
     XMLElement* vertexElement = root->FirstChildElement("vertexdata");
     if (vertexElement) {
         std::stringstream ss(vertexElement->GetText());
@@ -194,6 +191,7 @@ void loadScene(const char* filename, Scene& scene) {
         }
     }
 
+    // Get texture data
     XMLElement* textureElement = root->FirstChildElement("texturedata");
     if (textureElement) {
         std::stringstream ss(textureElement->GetText());
@@ -203,12 +201,14 @@ void loadScene(const char* filename, Scene& scene) {
         }
     }
 
+    // Get texture image
     XMLElement* texImgElem = root->FirstChildElement("textureimage");
         if (texImgElem && texImgElem->GetText()) {
             std::stringstream ss(texImgElem->GetText());
             ss >> scene.texture_image_name;
         }
 
+    // Get normal data
     XMLElement* normalElement = root->FirstChildElement("normaldata");
     if (normalElement) {
         std::stringstream ss(normalElement->GetText());
@@ -218,6 +218,7 @@ void loadScene(const char* filename, Scene& scene) {
         }
     }
 
+    // Get objects
     XMLElement* objectsElem = root->FirstChildElement("objects");
     if (objectsElem) {
         // Loop through every <mesh> tag inside <objects>
@@ -225,7 +226,7 @@ void loadScene(const char* filename, Scene& scene) {
             meshElem != nullptr; 
             meshElem = meshElem->NextSiblingElement("mesh")) {
 
-            // 1. Get Material ID
+            // Get Material ID
             int matId = 0;
             XMLElement* matIdElem = meshElem->FirstChildElement("materialid");
             if (matIdElem) {
@@ -235,13 +236,13 @@ void loadScene(const char* filename, Scene& scene) {
             // Create a mesh instance with this material ID
             Mesh currentMesh(matId);
 
-            // 2. Parse Faces
+            // Parse Faces
             XMLElement* facesElem = meshElem->FirstChildElement("faces");
             if (facesElem && facesElem->GetText()) {
                 std::stringstream ss(facesElem->GetText());
                 std::string v1_block, v2_block, v3_block;
 
-                // In XML, a face is defined by 3 vertices (v/t/n)
+                // (v/t/n)
                 while (ss >> v1_block >> v2_block >> v3_block) {
                     int v[3], t[3], n[3];
 
@@ -262,7 +263,7 @@ void loadScene(const char* filename, Scene& scene) {
     }
 
 
-    // --- DEBUG PRINTS ---
+    // DEBUG PRINTS 
     std::cout << "\n--- Scene Data Check ---" << std::endl;
     std::cout << "Max Depth: " << scene.max_ray_trace_depth << std::endl;
     std::cout << "Camera Res: " << scene.cam.nx << "x" << scene.cam.ny << std::endl;
@@ -270,11 +271,9 @@ void loadScene(const char* filename, Scene& scene) {
     std::cout << "Materials loaded: " << scene.materials.size() << std::endl;
     std::cout << "Lights loaded: " << scene.lights.size() << std::endl;
     std::cout << "Meshes loaded: " << scene.meshes.size() << std::endl;
-    if (!scene.meshes.empty()) {
-        for (int i = 0; i < scene.meshes.size(); i++) {
-            std::cout << "Faces in Mesh " << i <<  ": " << scene.meshes[i].faces.size() << std::endl;
-        }
-        
+    int i = 0;
+    for (const auto& mesh : scene.meshes) {
+        std::cout << "Faces in Mesh " << i++ << ": " << mesh.faces.size() << std::endl;
     }
     std::cout << "------------------------\n" << std::endl;
 }

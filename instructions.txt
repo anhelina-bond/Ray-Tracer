@@ -1,0 +1,53 @@
+Ray Tracer - User Documentation
+1. Prerequisites
+To compile and run this program, you need the following installed on your system:
+- GCC Compiler (MinGW-w64 for Windows or standard GCC for Linux/macOS).
+- Make (Standard make or mingw32-make for Windows).
+- C++11 or higher.
+2. Project Structure
+Ensure the project directory is organized as follows:
+RayTracer/
+├── bin/                # Executable file (generated)
+├── build/              # Compiled object files (generated)
+├── data/               # Scene XML files and Texture images
+├── external/           # Third-party libraries (TinyXML2, STB)
+├── include/            # Header files (.h)
+├── src/                # Source files (.cpp)
+└── Makefile            # Build instructions
+3. Compilation
+The project uses a Makefile optimized for speed using the -O3 flag and multithreading support.
+Compilation command:
+
+make
+
+To delete previous builds and start fresh:
+
+make clean
+
+4. Running the Program
+The program accepts an optional command-line argument for the scene file path.
+Option A: Run with Default Scene
+By default, the program looks for a scene located at data/scene.xml.
+
+./bin/raytracer
+
+Option B: Run with a Specific Scene
+You can provide a path to any XML scene description file:
+
+./bin/raytracer data/my_custom_scene.xml
+
+5. Understanding the Output
+Once the program starts:
+Parsing: It will display the count of vertices, materials, and meshes loaded from the XML.
+Texture Loading: It will confirm if the texture image (e.g., clay.jpg) was found and loaded.
+Rendering: The program uses 8 parallel threads to process the image. The terminal will display the rendering progress.
+Finalization: Upon completion, it displays the total Render time in seconds.
+Image: The final result is saved as output.png in the root directory.
+6. Optimization Features
+Multithreading: Uses pthread to distribute pixel calculations across all available CPU cores.
+Möller–Trumbore Algorithm: Implements fast ray-triangle intersections.
+Shadow Acne Prevention: Uses geometric normal offsets to eliminate self-intersection artifacts.
+Interpolated Normals: Supports smooth Phong shading for low-poly meshes.
+Texture Mapping: Supports UV interpolation and texture blending via the texturefactor material property.
+
+Created for CSE 461 Computer Graphics Assignment.
