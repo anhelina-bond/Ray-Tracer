@@ -9,6 +9,7 @@
 #include <pthread.h>
 #include <limits>
 #include <fstream>
+#include <random>
 
 #include "scene.h"
 #include "ray.h"
@@ -20,6 +21,7 @@
 #include <stdlib.h>
 
 #define NUM_THREADS 8 
+#define SAMPLES_PER_PIXEL 16
 
 // Structure to pass data to each thread
 struct ThreadData {
@@ -37,17 +39,35 @@ unsigned char clamp(double val) {
 }
 
 
+inline double random_double() {
+    static std::uniform_real_distribution<double> distribution(0.0, 1.0);
+    static std::mt19937 generator;
+    return distribution(generator);
+}
+
+
 // THE THREAD WORKER FUNCTION
 void* render_rows(void* arg) {
     ThreadData* data = (ThreadData*)arg;
     int nx = data->scene->cam.nx;
-    // int ny = data->scene->cam.ny;
 
     for (int j = data->start_row; j < data->end_row; ++j) {
         for (int i = 0; i < nx; ++i) {
-            Ray r = data->scene->cam.get_ray(i, j);
-            color pixel_color = trace(r, *(data->scene), 0);
+            color pixel_color(0, 0, 0);
 
+            for (int s = 0; s < SAMPLES_PER_PIXEL; ++s) {
+                // Jittered sampling: offset the ray by a random amount [0, 1)
+                double u_offset = i + random_double();
+                double v_offset = j + random_double();
+
+                Ray r = data->scene->cam.get_ray(u_offset, v_offset);
+                pixel_color += trace(r, *(data->scene), 0);
+            }
+
+            // Average the samples
+            pixel_color = pixel_color / (double)SAMPLES_PER_PIXEL;
+
+            // STB expects [R, G, B...] scaled 0-255
             int pixel_index = (j * nx + i) * 3;
             data->image_buffer[pixel_index + 0] = clamp(pixel_color.e[0]);
             data->image_buffer[pixel_index + 1] = clamp(pixel_color.e[1]);

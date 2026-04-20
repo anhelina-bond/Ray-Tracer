@@ -36,7 +36,7 @@ public:
 
     
 
-    Ray get_ray(int i, int j) const;
+    Ray get_ray(double x, double y) const;
 
 
 private:
