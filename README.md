@@ -1,45 +1,82 @@
-Ray Tracer - User Documentation
-1. Prerequisites
-To compile and run this program, you need the following installed on your system:
-GCC Compiler (MinGW-w64 for Windows or standard GCC for Linux/macOS).
-Make (Standard make or mingw32-make for Windows).
-C++11 or higher.
-2. Project Structure
-Ensure your project directory is organized as follows:
+# Ray Tracer
+A high-performance, multithreaded C++ Ray Tracer that renders 3D meshes defined in XML scene files. It supports smooth shading, texture mapping, and various light sources.
+
+## 📂 Project Structure
+```
 RayTracer/
-├── bin/                # Executable file (generated)
-├── build/              # Compiled object files (generated)
-├── data/               # Scene XML files and Texture images
+├── bin/                # Executable binaries
+├── build/              # Compiled object files (.o)
+├── data/               # Scene XML files and textures (e.g., clay.jpg)
 ├── external/           # Third-party libraries (TinyXML2, STB)
 ├── include/            # Header files (.h)
-├── src/                # Source files (.cpp)
-└── Makefile            # Build instructions
-3. Compilation
-The project uses a Makefile optimized for speed using the -O3 flag and multithreading support.
-Open your terminal/command prompt in the RayTracer root folder.
-Run the following command:
+├── src/                # Source code (.cpp)
+└── Makefile            # Build configuration
+```
+
+## 🛠 Prerequisites
+Ensure you have the following installed:
+- **GCC/G++ Compiler** (C++11 or higher supported)
+- **Make** (Use `mingw32-make` if on Windows)
+- **Pthreads library** (Standard on Linux; included in MinGW for Windows)
+
+## 🚀 Compilation
+The project includes an optimized Makefile that uses the `-O3` flag for maximum rendering speed.
+
+1. Open a terminal in the project root directory.
+2. Build the project:
+```bash
 make
-To delete previous builds and start fresh, run:
+```
+3. (Optional) To clean the build files and start fresh:
+```bash
 make clean
-4. Running the Program
-The program accepts an optional command-line argument for the scene file path.
-Option A: Run with Default Scene
-By default, the program looks for a scene located at data/scene.xml.
+```
+
+## 🖥 Usage
+The program can be run with a default scene or a custom XML file passed as a command-line argument.
+
+### Default Execution
+By default, the program looks for `data/scene.xml`:
+```bash
 ./bin/raytracer
-Option B: Run with a Specific Scene
-You can provide a path to any XML scene description file:
-./bin/raytracer data/my_custom_scene.xml
-5. Understanding the Output
-Once the program starts:
-Parsing: It will display the count of vertices, materials, and meshes loaded from the XML.
-Texture Loading: It will confirm if the texture image (e.g., clay.jpg) was found and loaded.
-Rendering: The program uses 8 parallel threads to process the image. The terminal will display the rendering progress.
-Finalization: Upon completion, it displays the total Render time in seconds.
-Image: The final result is saved as output.png in the root directory.
-6. Optimization Features
-Multithreading: Uses pthread to distribute pixel calculations across all available CPU cores.
-Möller–Trumbore Algorithm: Implements fast ray-triangle intersections.
-Shadow Acne Prevention: Uses geometric normal offsets to eliminate self-intersection artifacts.
-Interpolated Normals: Supports smooth Phong shading for low-poly meshes.
-Texture Mapping: Supports UV interpolation and texture blending via the texturefactor material property.
-Created for CSE 461 Computer Graphics Assignment.
+```
+
+### Custom Scene
+To run a specific scene file:
+```bash
+./bin/raytracer data/your_scene_file.xml
+```
+
+## 📊 Sample Output
+When successful, the terminal will display the scene statistics and rendering progress:
+```
+Successfully loaded: data/scene.xml
+
+--- Scene Data Check ---
+Max Depth: 6
+Camera Res: 1200x1200
+Vertices loaded: 621
+Materials loaded: 2
+Lights loaded: 3
+Meshes loaded: 3
+...
+Texture loaded: data/clay.jpg
+Rendering 1200x1200 image with 4 threads...
+All threads finished.
+Render time: 7.145 seconds.
+Success! Saved to output.png
+```
+
+## ✨ Features & Technical Details
+- **Multithreading:** Uses `pthread` to utilize all CPU cores, significantly reducing render times.
+- **Intersection Algorithm:** Implements the Möller–Trumbore ray-triangle intersection for high efficiency.
+- **Shading Models:**
+  - **Blinn-Phong:** Realistic specular highlights and diffuse reflections.
+  - **Smooth Shading:** Normal interpolation across triangle faces for curved surfaces.
+- **Light Sources:** Supports Point Lights (with $1/d^2$ attenuation), Triangular (Planar) Lights, and Ambient Lighting.
+- **Shadows:** Accurate shadow casting with geometric offsets to prevent "Shadow Acne" artifacts.
+- **Texture Mapping:** Bilinear UV interpolation with configurable `texturefactor` for blending.
+- **Image Output:** Saves high-resolution results in `.png` format via the `stb_image_write` library.
+
+---
+*Developed for CSE 461 Computer Graphics.*
